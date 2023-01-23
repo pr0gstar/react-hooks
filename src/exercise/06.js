@@ -9,63 +9,24 @@ import {
   PokemonDataView,
 } from '../pokemon'
 
-class ErrorBoundary extends React.Component {
-  state = {error: null}
-
-  static getDerivedStateFromError(error) {
-    return {error}
-  }
-
-  render() {
-    const {error} = this.state
-    console.log('errorbound', error)
-    if (error) {
-      return <this.props.FallbackComponent error={error} />
-    }
-
-    return this.props.children
-  }
-}
-
 function PokemonInfo({pokemonName}) {
-  const [state, setState] = React.useState({
-    status: 'idle',
-    pokemon: null,
-    error: null,
-  })
-  const {status, pokemon, error} = state
+  const [pokemon, setPokemon] = React.useState(null)
 
   React.useEffect(() => {
     if (!pokemonName) {
       return
     }
-    setState({status: 'pending'})
-    fetchPokemon(pokemonName)
-      .then(pokemonData => {
-        setState({status: 'resolved', pokemon: pokemonData})
-      })
-      .catch(error => setState({status: 'failed', error: error}))
+    setPokemon(null)
+    fetchPokemon(pokemonName).then(pokemonData => setPokemon(pokemonData))
   }, [pokemonName])
-  if (status === 'idle') {
+
+  if (!pokemonName) {
     return 'Submit a Pokemon'
-  } else if (status === 'pending') {
+  } else if (!pokemon) {
     return <PokemonInfoFallback name={pokemonName} />
-  } else if (status === 'failed') {
-    throw error
-  } else if (status === 'resolved') {
+  } else {
     return <PokemonDataView pokemon={pokemon} />
   }
-
-  throw new Error('This should be impossible!')
-}
-
-function ErrorFallbackComponent({error}) {
-  return (
-    <div role="alert">
-      There was an error:{' '}
-      <pre style={{whiteSpace: 'normal'}}>{error.message}</pre>
-    </div>
-  )
 }
 
 function App() {
@@ -80,9 +41,7 @@ function App() {
       <PokemonForm pokemonName={pokemonName} onSubmit={handleSubmit} />
       <hr />
       <div className="pokemon-info">
-        <ErrorBoundary FallbackComponent={ErrorFallbackComponent}>
-          <PokemonInfo pokemonName={pokemonName} />
-        </ErrorBoundary>
+        <PokemonInfo pokemonName={pokemonName} />
       </div>
     </div>
   )
